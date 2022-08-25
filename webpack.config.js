@@ -82,8 +82,8 @@ module.exports = (env, argv) => {
         },
         plugins: [
             new ModuleFederationPlugin({
-                name: "dropdownTreeSelect",
-                library: { type: "assign", name: "appShell.remotes.dropdownTreeSelect" },
+                name: "contentSelectorDropdownTreeSelect",
+                library: { type: "assign", name: "appShell.remotes.contentSelectorDropdownTreeSelect" },
                 filename: "remoteEntry.js",
                 exposes: {
                     // '.': './src/javascript/shared',
@@ -92,6 +92,7 @@ module.exports = (env, argv) => {
                 remotes: {
                     // '@jahia/jcontent': 'appShell.remotes.jcontent',
                     '@jahia/app-shell': 'appShellRemote',
+                    '@jahia/content-editor': 'appShell.remotes.contentEditor'
                     // '@jahia/jahia-ui-root': 'appShell.remotes.jahiaUi'
                 },
                 shared

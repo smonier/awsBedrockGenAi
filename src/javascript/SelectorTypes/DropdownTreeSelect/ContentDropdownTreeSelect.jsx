@@ -1,16 +1,33 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {FieldPropTypes} from '~/editor.proptypes';
-import {DropdownTreeSelect} from '~/DesignSystem/DropdownTreeSelect';
+import {EditorContextPropTypes, FieldPropTypes} from '../../editor.proptypes';
+import {DropdownTreeSelect} from '../../DesignSystem/DropdownTreeSelect';
 import {useQuery} from '@apollo/react-hooks';
 import {GetTree} from './contentDropdownTreeSelect.gql-queries';
 import {adaptToTree} from './contentDropdownTreeSelect.adapter';
 import {useTranslation} from 'react-i18next';
+// Import {useContentEditorContext} from '@jahia/content-editor';
 // Import {LoaderOverlay} from '~/DesignSystem/LoaderOverlay';
-
+const defaultOptions = [
+    {
+        name: 'path',
+        value: '$currentSite'
+    },
+    {
+        name: 'types',
+        value: 'jnt:page,jnt:navMenuText'
+    }
+];
 export const ContentDropdownTreeSelect = ({field, value, id, editorContext, onChange, onBlur}) => {
     const {t} = useTranslation('content-editor');
-    const {selectorOptions: {path, types}} = field;
+    // Const editorContext = useContentEditorContext();
+
+    const selectorOptions = field.selectorOptions || defaultOptions;
+
+    const _path = selectorOptions.find(option => option.name === 'path').value;
+    const path = _path.replace('$currentSite', editorContext.siteInfo.path);
+    const _types = selectorOptions.find(option => option.name === 'types').value;
+    const types = _types.split(',');
 
     const {data, error, loading} = useQuery(GetTree, {
         variables: {
@@ -68,9 +85,7 @@ ContentDropdownTreeSelect.propTypes = {
     field: FieldPropTypes.isRequired,
     id: PropTypes.string.isRequired,
     value: PropTypes.arrayOf(PropTypes.string),
-    editorContext: PropTypes.shape({
-        lang: PropTypes.string.isRequired
-    }).isRequired,
+    editorContext: EditorContextPropTypes.isRequired,
     onChange: PropTypes.func.isRequired,
     onBlur: PropTypes.func.isRequired
 };
