@@ -4,12 +4,13 @@
   "scripts": {
     "build": "yarn webpack",
     "webpack": "node --max_old_space_size=2048 ./node_modules/webpack/bin/webpack.js",
+    "build:production": "yarn lint && yarn build --mode=production",
     "lint": "eslint --ext js,jsx,json .",
     "lint:fix": "eslint --ext js,jsx,json --fix ."
   },
   "description": "Jahia Content Editor",
   "main": "index.js",
-  "repository": "git@github.com:Jahia/content-editor.git",
+  "repository": "git@github.com:Jahia/dropdown-tree-select.git",
   "author": "Herve Duchesne <hduchesne@jahia.com>",
   "license": "SEE LICENSE IN LICENSE.txt FILE",
   "jahia": {
