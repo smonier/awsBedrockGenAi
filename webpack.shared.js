@@ -56,7 +56,9 @@ const singletonDeps = [
     'formik'
 ];
 
-const notImported = [];
+const notImported = [
+    '@jahia/ui-extender'
+];
 
 const shared = sharedDeps.filter(item => deps[item]).reduce((acc, item) => ({
     ...acc,

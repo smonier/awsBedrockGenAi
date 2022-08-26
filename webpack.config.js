@@ -92,7 +92,7 @@ module.exports = (env, argv) => {
                 remotes: {
                     // '@jahia/jcontent': 'appShell.remotes.jcontent',
                     '@jahia/app-shell': 'appShellRemote',
-                    '@jahia/content-editor': 'appShell.remotes.contentEditor'
+                    // '@jahia/content-editor': 'appShell.remotes.contentEditor'
                     // '@jahia/jahia-ui-root': 'appShell.remotes.jahiaUi'
                 },
                 shared

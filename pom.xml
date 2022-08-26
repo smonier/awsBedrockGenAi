@@ -57,12 +57,12 @@
     </build>
 
     <profiles>
-    <profile>
-        <id>dev</id>
-        <properties>
-            <yarn.arguments>webpack</yarn.arguments>
-        </properties>
-    </profile>
+        <profile>
+            <id>dev</id>
+            <properties>
+                <yarn.arguments>webpack</yarn.arguments>
+            </properties>
+        </profile>
         <profile>
             <id>javascript</id>
             <activation>
