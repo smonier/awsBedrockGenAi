@@ -18,14 +18,27 @@ const defaultOptions = [
         value: 'jnt:page,jnt:navMenuText'
     }
 ];
+
+// cannot use editorContext.siteInfo.path because the value is systemSite if content
+// is open in repository explorer
+const getCurrentSite = (editorContext) => {
+    const scopeRegex = /\/sites\/(?<scope>[\w\d.-]*)\//mi
+    const scopeExec = scopeRegex.exec(editorContext.path);
+    if(scopeExec){
+        const {groups: {scope}} = scopeExec;
+        return `/sites/${scope}`
+    }
+
+
+}
+
 export const ContentDropdownTreeSelect = ({field, value, id, editorContext, onChange, onBlur}) => {
     const {t} = useTranslation('content-editor');
     // Const editorContext = useContentEditorContext();
-
     const selectorOptions = field.selectorOptions || defaultOptions;
 
     const _path = selectorOptions.find(option => option.name === 'path').value;
-    const path = _path.replace('$currentSite', editorContext.siteInfo.path);
+    const path = _path.replace('$currentSite', getCurrentSite(editorContext));
     const _types = selectorOptions.find(option => option.name === 'types').value;
     const types = _types.split(',');
 
