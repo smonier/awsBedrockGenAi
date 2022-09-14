@@ -6,8 +6,7 @@ import {useQuery} from '@apollo/react-hooks';
 import {GetTree} from './contentDropdownTreeSelect.gql-queries';
 import {adaptToTree} from './contentDropdownTreeSelect.adapter';
 import {useTranslation} from 'react-i18next';
-// Import {useContentEditorContext} from '@jahia/content-editor';
-// Import {LoaderOverlay} from '~/DesignSystem/LoaderOverlay';
+
 const defaultOptions = [
     {
         name: 'path',
@@ -19,18 +18,16 @@ const defaultOptions = [
     }
 ];
 
-// cannot use editorContext.siteInfo.path because the value is systemSite if content
+// Cannot use editorContext.siteInfo.path because the value is systemSite if content
 // is open in repository explorer
-const getCurrentSite = (editorContext) => {
-    const scopeRegex = /\/sites\/(?<scope>[\w\d.-]*)\//mi
+const getCurrentSite = editorContext => {
+    const scopeRegex = /\/sites\/(?<scope>[\w\d.-]*)\//mi;
     const scopeExec = scopeRegex.exec(editorContext.path);
-    if(scopeExec){
+    if (scopeExec) {
         const {groups: {scope}} = scopeExec;
-        return `/sites/${scope}`
+        return `/sites/${scope}`;
     }
-
-
-}
+};
 
 export const ContentDropdownTreeSelect = ({field, value, id, editorContext, onChange, onBlur}) => {
     const {t} = useTranslation('content-editor');
