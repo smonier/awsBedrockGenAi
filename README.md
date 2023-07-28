@@ -24,21 +24,53 @@ For example to display the site plan tree to populate the property `j:baseNode`:
     {
       "name": "j:baseNode",
       "selectorType": "DropdownTree",
-      "selectorOptions":[
-        {
-          "name": "path",
-          "value" : "$currentSite"
-        },
-        {
-          "name": "types",
-          "value" : "jnt:page,jnt:navMenuText"
-        }
-      ]
+      "selectorOptionsMap":{
+        "type": "pageTree"
+      }
     }
   ]
 }
 ```
-In the `selectorOptions` you provide where do you want to start the content search
-and which type of content you want to return.
+The `selectorOptionsMap` can be configured with 3 options :
+- `type` : predifined configuration, possible value is : *pageTree* and *categoryTree*. By default, without any options
+the selector display the category tree. 
+- `contentPath` : this option is a string which define the start point of the tree which will be displayed
+- `contentTypes` : this options is a list (csv string) of content type return by the tree
+
+For example, you can use these configurations :
+```json
+{
+  "name": "jmix:navMenuNextBase",
+  "fields": [
+    {
+      "name": "j:baseNode",
+      "selectorType": "DropdownTree",
+      "selectorOptionsMap":{
+        "type": "pageTree",
+        "contentPath": "$currentSite/home/mysubpage"
+      }
+    }
+  ]
+}
+```
+Here we use the predefined configuration for the page tree but we overwrite the starting point based on the contentPath.
+
+
+```json
+{
+  "name": "mix:docClassification",
+  "fields": [
+    {
+      "name": "nomenclature",
+      "selectorType": "DropdownTree",
+      "selectorOptionsMap": {
+        "contentPath": "$currentSite/contents",
+        "contentTypes": "jnt:contentFolder"
+      }
+    }
+  ]
+}
+```
+In the configuration above we want to display the folder tree starting from the contents folder.
 
 [100]: doc/images/100_overview.png
