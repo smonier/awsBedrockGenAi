@@ -8,8 +8,10 @@ export const adaptToTree = ({nodes, parent, selectedValues, locale}) => {
         .filter(node => node.parent.uuid === parent.uuid)
         .map(node => {
             return {
-                ...node,
-                expanded: nodes.filter(cat => cat.parent.uuid === node.uuid).filter(cat => selectedValues && selectedValues.includes(cat.uuid)).length > 0,
+                id: node.value,
+                value: node.value,
+                label: node.label,
+                expanded: nodes.filter(item => item.parent.uuid === node.uuid).filter(item => selectedValues && selectedValues.includes(item.uuid)).length > 0,
                 checked: selectedValues ? selectedValues.includes(node.uuid) : undefined,
                 children: adaptToTree({
                     nodes,
