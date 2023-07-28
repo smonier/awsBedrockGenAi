@@ -16,15 +16,6 @@ const categoryTree = {
     contentPath: '/sites/systemsite/categories',
     contentTypes: 'jnt:category'
 };
-// Configs
-// const pageTree = [
-//     {name:'contentPath',value:'$currentSite'},
-//     {name: 'contentTypes',value: 'jnt:page,jnt:navMenuText'}
-// ]
-// const categoryTree = [
-//     {name:'contentPath',value:'systemsite/categories'},
-//     {name: 'contentTypes',value: 'jnt:category'}
-// ]
 
 const cmpPreconfiguredParams = {
     pageTree,
@@ -44,6 +35,10 @@ const getCurrentSite = editorContext => {
     }
 };
 
+const preconfiguredOptionsAdapter = (options, editorContext) => selectorOptionsAdapter(
+    Object.keys(options).reduce((formatedOptions, key) => [...formatedOptions, {name: key, value: options[key]}], []),
+    editorContext
+);
 const selectorOptionsAdapter = (selectorOptions, editorContext) => {
     if (!selectorOptions) {
         return {};
@@ -69,7 +64,10 @@ export const ContentDropdownTreeSelect = ({field, value, id, editorContext, onCh
     const {t} = useTranslation('content-editor');
     const selectorOptions = field.selectorOptions;
     const selectorType = selectorOptions?.find(option => option.name === 'type')?.value || 'default';
-    const {contentPath, contentTypes} = Object.assign(cmpPreconfiguredParams[selectorType], selectorOptionsAdapter(selectorOptions, editorContext));
+    const {contentPath, contentTypes} = Object.assign(
+        preconfiguredOptionsAdapter(cmpPreconfiguredParams[selectorType], editorContext),
+        selectorOptionsAdapter(selectorOptions, editorContext)
+    );
 
     const {data, error, loading} = useQuery(GetTree, {
         variables: {
