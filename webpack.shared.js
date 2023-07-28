@@ -57,7 +57,8 @@ const singletonDeps = [
 ];
 
 const notImported = [
-    '@jahia/ui-extender'
+    '@jahia/ui-extender',
+    '@jahia/moonstone'
 ];
 
 const shared = sharedDeps.filter(item => deps[item]).reduce((acc, item) => ({

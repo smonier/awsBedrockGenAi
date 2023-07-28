@@ -1,22 +1,37 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {EditorContextPropTypes, FieldPropTypes} from '../../editor.proptypes';
-import {DropdownTreeSelect} from '../../DesignSystem/DropdownTreeSelect';
+import {FieldPropTypes} from '../../editor.proptypes';
 import {useQuery} from '@apollo/react-hooks';
 import {GetTree} from './contentDropdownTreeSelect.gql-queries';
 import {adaptToTree} from './contentDropdownTreeSelect.adapter';
 import {useTranslation} from 'react-i18next';
+import {LoaderOverlay} from '../../DesignSystem/LoaderOverlay';
+import {Dropdown} from '@jahia/moonstone';
 
-const defaultOptions = [
-    {
-        name: 'path',
-        value: '$currentSite'
-    },
-    {
-        name: 'types',
-        value: 'jnt:page,jnt:navMenuText'
-    }
-];
+const pageTree = {
+    contentPath: '$currentSite',
+    contentTypes: 'jnt:page,jnt:navMenuText'
+};
+const categoryTree = {
+    contentPath: '/sites/systemsite/categories',
+    contentTypes: 'jnt:category'
+};
+// Configs
+// const pageTree = [
+//     {name:'contentPath',value:'$currentSite'},
+//     {name: 'contentTypes',value: 'jnt:page,jnt:navMenuText'}
+// ]
+// const categoryTree = [
+//     {name:'contentPath',value:'systemsite/categories'},
+//     {name: 'contentTypes',value: 'jnt:category'}
+// ]
+
+const cmpPreconfiguredParams = {
+    pageTree,
+    categoryTree,
+    default: categoryTree
+
+};
 
 // Cannot use editorContext.siteInfo.path because the value is systemSite if content
 // is open in repository explorer
@@ -29,43 +44,68 @@ const getCurrentSite = editorContext => {
     }
 };
 
+const selectorOptionsAdapter = (selectorOptions, editorContext) => {
+    if (!selectorOptions) {
+        return {};
+    }
+
+    return selectorOptions.reduce((options, item) => {
+        switch (item.name) {
+            case 'contentPath':
+                options[item.name] = item.value.replace('$currentSite', getCurrentSite(editorContext));
+                break;
+            case 'contentTypes':
+                options[item.name] = item.value.split(',');
+                break;
+            default:
+                break;
+        }
+
+        return options;
+    }, {});
+};
+
 export const ContentDropdownTreeSelect = ({field, value, id, editorContext, onChange, onBlur}) => {
     const {t} = useTranslation('content-editor');
-    // Const editorContext = useContentEditorContext();
-    const selectorOptions = field.selectorOptions || defaultOptions;
-
-    const _path = selectorOptions.find(option => option.name === 'path').value;
-    const path = _path.replace('$currentSite', getCurrentSite(editorContext));
-    const _types = selectorOptions.find(option => option.name === 'types').value;
-    const types = _types.split(',');
+    const selectorOptions = field.selectorOptions;
+    const selectorType = selectorOptions?.find(option => option.name === 'type')?.value || 'default';
+    const {contentPath, contentTypes} = Object.assign(cmpPreconfiguredParams[selectorType], selectorOptionsAdapter(selectorOptions, editorContext));
 
     const {data, error, loading} = useQuery(GetTree, {
         variables: {
-            path,
-            types,
+            path: contentPath,
+            types: contentTypes,
             language: editorContext.lang
         }
     });
 
-    const handleChange = (_, selectedValues) => {
-        const newValues = selectedValues.map(v => v.value);
+    const handleClear = () => {
         if (field.multiple) {
-            onChange(newValues);
+            onChange([]);
         } else {
-            onChange(newValues[0]);
+            onChange(null);
+        }
+    };
+
+    const handleChange = (_, selectedValue) => {
+        if (field.multiple) {
+            const prev = value || [];
+            onChange(prev.indexOf(selectedValue.value) > -1 ? prev.filter(i => i !== selectedValue.value) : [...prev, selectedValue.value]);
+        } else {
+            onChange(selectedValue.value);
         }
     };
 
     if (error) {
         const message = t(
             'content-editor:label.contentEditor.error.queryingContent',
-            {details: `${path} in ${editorContext.lang}`}
+            {details: `${contentPath} in ${editorContext.lang}`}
         );
         return <>{message}</>;
     }
 
     if (loading) {
-        return 'Loading';
+        return <LoaderOverlay/>;
     }
 
     const tree = adaptToTree({
@@ -75,16 +115,21 @@ export const ContentDropdownTreeSelect = ({field, value, id, editorContext, onCh
         locale: editorContext.lang
     });
 
+    const singleValue = !field.multiple ? value : undefined;
+    const multipleValue = field.multiple ? (value || []) : undefined;
+
     return (
-        <DropdownTreeSelect
-            clearSearchOnChange
-            keepTreeOnSearch
+        <Dropdown
+            hasSearch
             id={id}
-            noMatchesLabel={t('content-editor:label.contentEditor.edit.fields.category.noMatches')}
-            aria-labelledby={`${field.name}-label`}
-            data={tree}
-            mode={field.multiple ? 'multiSelect' : 'radioSelect'}
-            readOnly={field.readOnly}
+            className="flexFluid"
+            treeData={tree}
+            variant="outlined"
+            size="medium"
+            value={singleValue}
+            values={multipleValue}
+            isDisabled={field.readOnly}
+            onClear={handleClear}
             onChange={handleChange}
             onBlur={onBlur}
         />
@@ -95,7 +140,9 @@ ContentDropdownTreeSelect.propTypes = {
     field: FieldPropTypes.isRequired,
     id: PropTypes.string.isRequired,
     value: PropTypes.arrayOf(PropTypes.string),
-    editorContext: EditorContextPropTypes.isRequired,
+    editorContext: PropTypes.shape({
+        lang: PropTypes.string.isRequired
+    }).isRequired,
     onChange: PropTypes.func.isRequired,
     onBlur: PropTypes.func.isRequired
 };
