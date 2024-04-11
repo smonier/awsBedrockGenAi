@@ -1,4 +1,4 @@
-package org.jahia.se.modules.dropdowntreeselect.rules
+package org.jahia.se.modules.awsbedrockgenai.rules
 
 // list any import classes here.
 import org.jahia.services.content.rules.*

@@ -1,4 +1,4 @@
-# dropdown-tree-select
+# aws-bedrock-gen-ai
 **This selector type is experimental.**
 ## Overview
 It allows you to display contents as a tree and pick them from

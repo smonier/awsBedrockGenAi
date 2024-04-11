@@ -10,16 +10,16 @@
         <version>8.1.0.0</version>
     </parent>
     <groupId>org.jahia.se.modules</groupId>
-    <artifactId>dropdown-tree-select</artifactId>
+    <artifactId>aws-bedrock-gen-ai</artifactId>
     <name>Dropdown Tree Select</name>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>bundle</packaging>
     <description>This is the custom module (Dropdown Tree Select) for running on a Jahia server.</description>
 
     <scm>
-        <connection>scm:git:git@github.com:Jahia/dropdown-tree-select.git</connection>
-        <developerConnection>scm:git:git@github.com:Jahia/dropdown-tree-select.git</developerConnection>
-        <url>https://github.com/Jahia/dropdown-tree-select</url>
+        <connection>scm:git:git@github.com:Jahia/aws-bedrock-gen-ai.git</connection>
+        <developerConnection>scm:git:git@github.com:Jahia/aws-bedrock-gen-ai.git</developerConnection>
+        <url>https://github.com/Jahia/aws-bedrock-gen-ai</url>
     </scm>
 
     <properties>

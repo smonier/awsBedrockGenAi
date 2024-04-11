@@ -4,25 +4,71 @@
     <parent>
         <artifactId>jahia-modules</artifactId>
         <groupId>org.jahia.modules</groupId>
-        <version>8.1.0.0</version>
+        <version>8.1.7.1</version>
     </parent>
     <groupId>org.jahia.se.modules</groupId>
-    <artifactId>dropdown-tree-select</artifactId>
-    <name>Dropdown Tree Select</name>
-    <version>1.0.2-SNAPSHOT</version>
+    <artifactId>aws-bedrock-gen-ai</artifactId>
+    <name>Aws Bedrock Gen Ai Implementation</name>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>bundle</packaging>
-    <description>This is the custom module (Dropdown Tree Select) for running on a Jahia server.</description>
+    <description>This is the custom module (Aws Bedrock Gen Ai Implementation) for running on a Jahia server.</description>
 
     <scm>
-        <connection>scm:git:git@github.com:Jahia/dropdown-tree-select.git</connection>
-        <developerConnection>scm:git:git@github.com:Jahia/dropdown-tree-select.git</developerConnection>
-        <url>https://github.com/Jahia/dropdown-tree-select</url>
+        <connection>scm:git:git@github.com:smonier/aws-bedrock-gen-ai.git</connection>
+        <developerConnection>scm:git:git@github.com:smonier/aws-bedrock-gen-ai.git</developerConnection>
+        <url>https://github.com/smonier/aws-bedrock-gen-ai</url>
       <tag>HEAD</tag>
-  </scm>
+    </scm>
 
     <properties>
+        <jahia-depends>default,content-editor=4.0.0</jahia-depends>
+        <jahia.plugin.version>6.0</jahia.plugin.version>
+        <require-capability>
+            osgi.extender;filter:="(osgi.extender=org.jahia.bundles.blueprint.extender.config)"
+        </require-capability>
         <yarn.arguments>build:production</yarn.arguments>
     </properties>
+
+    <dependencies>
+
+        <!-- https://mvnrepository.com/artifact/software.amazon.awssdk/bedrock -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>bedrock</artifactId>
+            <version>2.25.29</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/software.amazon.awssdk/bedrockruntime -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>bedrockruntime</artifactId>
+            <version>2.25.29</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
+            <version>1.70</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.json/json -->
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20240303</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.jsoup/jsoup -->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.17.2</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.17.0</version>
+        </dependency>
+
+    </dependencies>
 
     <repositories>
         <repository>
@@ -37,6 +83,10 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
+        <repository>
+            <id>jahia-releases</id>
+            <url>https://devtools.jahia.com/nexus/content/repositories/jahia-releases</url>
+        </repository>
     </repositories>
 
     <build>
@@ -48,12 +98,86 @@
                 <configuration>
                     <instructions>
                         <Jahia-Depends>default</Jahia-Depends>
+                        <Jahia-Static-Resources>/css,/fonts,/javascript,/images,/icons,/img</Jahia-Static-Resources>
                     </instructions>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>9</source>
+                    <target>9</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>src/main/resources/javascript/apps</directory>
+                            <includes>
+                                <include>*</include>
+                            </includes>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <version>1.6</version>
+                <!-- executions go here -->
+                <executions>
+                    <execution>
+                        <id>npm install node and yarn</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>install-node-and-yarn</goal>
+                        </goals>
+                        <configuration>
+                            <nodeVersion>v18.19.0</nodeVersion>
+                            <yarnVersion>v1.22.10</yarnVersion>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>yarn install</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>yarn post-install</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>${yarn.arguments}</arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.3</version>
+                <configuration>
+                    <createDependencyReducedPom>false</createDependencyReducedPom>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
-
     <profiles>
         <profile>
             <id>dev</id>
@@ -101,8 +225,8 @@
                                     <goal>install-node-and-yarn</goal>
                                 </goals>
                                 <configuration>
-                                    <nodeVersion>v14.21.3</nodeVersion>
-                                    <yarnVersion>v1.22.19</yarnVersion>
+                                    <nodeVersion>v18.19.0</nodeVersion>
+                                    <yarnVersion>v1.22.10</yarnVersion>
                                 </configuration>
                             </execution>
                             <execution>

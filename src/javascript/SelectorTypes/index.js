@@ -1,1 +1,1 @@
-export * from './DropdownTreeSelect';
+export * from './AwsBedrockTags';

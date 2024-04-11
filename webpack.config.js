@@ -2,34 +2,59 @@ const path = require('path');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const {CleanWebpackPlugin} = require('clean-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
-const CaseSensitivePathsPlugin = require('case-sensitive-paths-webpack-plugin');
-const ModuleFederationPlugin = require("webpack/lib/container/ModuleFederationPlugin");
-const shared = require("./webpack.shared")
-// const moonstone = require("@jahia/moonstone/dist/rulesconfig-wp");
+const ModuleFederationPlugin = require('webpack/lib/container/ModuleFederationPlugin');
+const {CycloneDxWebpackPlugin} = require('@cyclonedx/webpack-plugin');
+const getModuleFederationConfig = require('@jahia/webpack-config/getModuleFederationConfig');
+
+const packageJson = require('./package.json');
+const {ContextReplacementPlugin} = require("webpack");
+
+/** @type {import('@cyclonedx/webpack-plugin').CycloneDxWebpackPluginOptions} */
+const cycloneDxWebpackPluginOptions = {
+    specVersion: '1.4',
+    rootComponentType: 'library',
+    outputLocation: './bom',
+    validateResults: false
+};
 
 module.exports = (env, argv) => {
-    let _argv = argv || {};
-
     let config = {
         entry: {
             main: path.resolve(__dirname, 'src/javascript/index')
         },
         output: {
             path: path.resolve(__dirname, 'src/main/resources/javascript/apps/'),
-            filename: 'dropdown-tree-select.bundle.js',
-            chunkFilename: '[name].dropdown-tree-select.[chunkhash:6].js'
+            filename: 'aws-bedrock-gen-ai.bundle.js',
+            chunkFilename: '[name].aws-bedrock-gen-ai.[chunkhash:6].js'
         },
         resolve: {
             mainFields: ['module', 'main'],
-            extensions: ['.mjs', '.js', '.jsx', 'json', '.scss'],
+            extensions: ['.mjs', '.js', '.jsx', '.json', '.scss'],
             alias: {
                 '~': path.resolve(__dirname, './src/javascript'),
             },
-            fallback: { "url": false }
+            fallback: {
+                "url": false,
+                "fs": false, // 'fs' is typically not available in the browser and might not have a browser-friendly package
+                "tls": false, // Similar to 'fs', 'tls' is node-specific and usually not required in a browser context
+                "net": false, // There's no direct browser equivalent for 'net', it's node-specific
+                "path": require.resolve("path-browserify"),
+                "zlib": require.resolve("browserify-zlib"),
+                "http": require.resolve("stream-http"),
+                "https": require.resolve("https-browserify"),
+                "stream": require.resolve("stream-browserify"),
+                "crypto": require.resolve("crypto-browserify"),
+                // For 'crypto-browserify', it seems like a redundancy since 'crypto' is already replaced with 'crypto-browserify'
+                "os": require.resolve("os-browserify/browser"),
+                "util": require.resolve("util/"),
+                "assert": require.resolve("assert/"),
+                "tty": require.resolve("tty-browserify"),
+                "vm": require.resolve("vm-browserify")
+            }
+
         },
         module: {
             rules: [
-                // ...moonstone,
                 {
                     test: /\.m?js$/,
                     type: 'javascript/auto'
@@ -55,8 +80,11 @@ module.exports = (env, argv) => {
                     }
                 },
                 {
+                    test: /\.css$/,
+                    use: ['style-loader', 'css-loader']
+                },
+                {
                     test: /\.scss$/i,
-                    include: [path.join(__dirname, 'src')],
                     sideEffects: true,
                     use: [
                         'style-loader',
@@ -74,47 +102,36 @@ module.exports = (env, argv) => {
                     ]
                 },
                 {
-                    test: /\.(woff(2)?|ttf|eot|svg|png)(\?v=\d+\.\d+\.\d+)?$/,
-                    type: 'asset/resource',
-                    dependency: { not: ['url'] }
+                    test: /\.(png|svg)$/,
+                    use: ['file-loader']
+                },
+                {
+                    test: /\.(woff(2)?|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/,
+                    use: [{
+                        loader: 'file-loader',
+                        options: {
+                            name: '[name].[ext]',
+                            outputPath: 'fonts/'
+                        }
+                    }]
                 }
             ]
         },
+
         plugins: [
-            new ModuleFederationPlugin({
-                name: "contentSelectorDropdownTreeSelect",
-                library: { type: "assign", name: "appShell.remotes.contentSelectorDropdownTreeSelect" },
-                filename: "remoteEntry.js",
-                exposes: {
-                    // '.': './src/javascript/shared',
-                    './init': './src/javascript/init'
-                },
-                remotes: {
-                    // '@jahia/jcontent': 'appShell.remotes.jcontent',
-                    '@jahia/app-shell': 'appShellRemote',
-                    // '@jahia/content-editor': 'appShell.remotes.contentEditor'
-                    // '@jahia/jahia-ui-root': 'appShell.remotes.jahiaUi'
-                },
-                shared
-            }),
-            new CleanWebpackPlugin({
-                cleanOnceBeforeBuildPatterns: [`${path.resolve(__dirname, 'src/main/resources/javascript/apps/')}/**/*`],
-                verbose: false
-            }),
-            new CopyWebpackPlugin({
-                patterns: [{
-                    from: './package.json',
-                    to: ''
-                }]
-            }),
-            new CaseSensitivePathsPlugin()
+            new ModuleFederationPlugin(getModuleFederationConfig(packageJson, {})),
+            new CleanWebpackPlugin({verbose: false}),
+            new CopyWebpackPlugin([{from: './package.json', to: ''}]),
+            new CycloneDxWebpackPlugin(cycloneDxWebpackPluginOptions),
+            new ContextReplacementPlugin(/any-promise/)
+
         ],
         mode: 'development'
     };
 
-    config.devtool = (_argv.mode === 'production') ? 'source-map' : 'eval-source-map';
+    config.devtool = (argv.mode === 'production') ? 'source-map' : 'eval-source-map';
 
-    if (_argv.analyze) {
+    if (argv.analyze) {
         config.devtool = 'source-map';
         config.plugins.push(new BundleAnalyzerPlugin());
     }

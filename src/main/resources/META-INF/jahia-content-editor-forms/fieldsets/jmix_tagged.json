@@ -1,0 +1,11 @@
+{
+    "name": "jmix:tagged",
+    "priority": 2.1,
+    "fields": [
+      {
+        "name": "j:tagList",
+        "description": "AWS Bedrock Auto Tagging",
+        "selectorType": "AwsBedrock"
+      }
+    ]
+  }
