@@ -15,10 +15,15 @@ For example:
 You need to configure the configuration file org.jahia.se.modules.awsBedrock.cfg as below
 
 aws.accessKeyId=YOUR_AWS_ACCESS_KEY_ID
+
 aws.secretAccessKey=YOUR_AWS_SECRET_ACCESS_KEY
+
 aws.modelId=amazon.titan-text-express-v1
+
 aws.endpoint=
+
 aws.region=us-east-1
+
 aws.prompt=Generate 5 tags return as an json object from the following text:
 
 [100]: doc/images/100_overview.png
