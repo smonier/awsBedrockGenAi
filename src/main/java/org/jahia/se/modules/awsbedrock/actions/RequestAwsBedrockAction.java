@@ -46,21 +46,32 @@ public class RequestAwsBedrockAction extends Action {
 
         return awsBedrockGeneratorService;
     }
-    
+
     @Override
     public ActionResult doExecute(HttpServletRequest httpServletRequest, RenderContext renderContext, Resource resource,
-           JCRSessionWrapper jcrSessionWrapper, Map<String, List<String>> map, URLResolver urlResolver)
-           throws Exception {
-
+                                  JCRSessionWrapper jcrSessionWrapper, Map<String, List<String>> map, URLResolver urlResolver)
+            throws Exception {
         final JSONObject resp = new JSONObject();
-        JSONObject data;
-        int resultCode =  HttpServletResponse.SC_BAD_REQUEST;
+        List<String> data;
+        int resultCode = HttpServletResponse.SC_BAD_REQUEST;
         final String currentLanguage = resource.getLocale().getLanguage();
-        LOGGER.info("path: "+resource.getNode().getPath());
-        data = awsBedrockGeneratorService.generateAutoTags(resource.getNode().getPath(), currentLanguage);
-        JSONArray jsonArray = new JSONArray(data);
-        resp.put("outputText", jsonArray);
-        resultCode = HttpServletResponse.SC_OK;
+        LOGGER.info("path: " + resource.getNode().getPath());
 
-        return new ActionResult(resultCode, null, resp);    }
+        try {
+            // Simulate obtaining JSON object from some service
+            data = awsBedrockGeneratorService.generateAutoTags(resource.getNode().getPath(), currentLanguage);
+            JSONArray jsonArray = new JSONArray(data);
+            resp.put("tags", jsonArray);
+            resultCode = HttpServletResponse.SC_OK;
+            LOGGER.info("tags: " + jsonArray.toString());
+
+            // Return the result encapsulated in an ActionResult
+            return new ActionResult(resultCode, null, resp);
+
+        } catch (Exception e) {
+            LOGGER.error("Error processing the JSON data", e);
+            // If there is any exception, log it and return a bad request result
+            return new ActionResult(HttpServletResponse.SC_BAD_REQUEST, null, null);
+        }
+    }
 }

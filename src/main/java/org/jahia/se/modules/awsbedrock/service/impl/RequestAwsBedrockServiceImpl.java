@@ -12,6 +12,7 @@ import org.jahia.services.content.JCRTemplate;
 import org.jahia.services.content.LazyPropertyIterator;
 import org.jahia.services.content.nodetypes.ExtendedPropertyDefinition;
 import org.jahia.utils.LanguageCodeConverters;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -36,6 +37,9 @@ import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+
 
 @Component(service = {RequestAwsBedrockService.class, ManagedService.class}, property = "service.pid=org.jahia.se.modules.awsBedrock", immediate = true)
 public class RequestAwsBedrockServiceImpl implements RequestAwsBedrockService, ManagedService {
@@ -48,12 +52,13 @@ public class RequestAwsBedrockServiceImpl implements RequestAwsBedrockService, M
     public static String regionProps;
     public static String maxTagsAdded;
     public static String inputText;
+    public static String promptProps;
 
     @Override
-    public JSONObject generateAutoTags(String path, String language) throws Exception {
+    public List<String> generateAutoTags(String path, String language) throws Exception {
 
         String cleanText = getTextFromNode(path, language);
-        String PROMPT = "Generate " + maxTagsAdded + " tags return as an json object from the following text: " + cleanText;
+        String PROMPT = promptProps + cleanText;
         LOGGER.info("PROMPT : " + PROMPT);
         LOGGER.info("Region : " + regionProps);
         LOGGER.info("ModelId : " + bedrockModelId);
@@ -69,7 +74,7 @@ public class RequestAwsBedrockServiceImpl implements RequestAwsBedrockService, M
      * @return The inference response from the model.
      * @throws Exception If there is an error during the invocation.
      */
-    public static JSONObject invokeAwsBedrock(String prompt, String region, String modelId) throws Exception {
+    public static List<String> invokeAwsBedrock(String prompt, String region, String modelId) throws Exception {
 
         try (
             BedrockRuntimeClient bedrockClient = BedrockRuntimeClient.builder()
@@ -93,10 +98,27 @@ public class RequestAwsBedrockServiceImpl implements RequestAwsBedrockService, M
 
             // Assuming the response body has a "results" field that is an array of objects
             // This part might need adjustments based on the actual response structure
-            JSONObject jsonResponse = new JSONObject(responseAsJson);
-            LOGGER.info(jsonResponse.getJSONArray("results").toString());
-            return jsonResponse;
+            LOGGER.info("Response: "+responseAsJson.getJSONArray("results").getJSONObject(0).toString());
+            return extractTags(responseAsJson.getJSONArray("results").getJSONObject(0).toString());
         }
+    }
+    public static List<String> extractTags(String jsonString) throws JSONException {
+        JSONObject jsonObject = new JSONObject(jsonString);
+        String outputText = jsonObject.getString("outputText");
+
+        // Split the output text into lines and process each line
+        String[] lines = outputText.split("\\n");
+        List<String> tags = new ArrayList<>();
+
+        // Iterate over each line, extracting the tag if it matches the expected format
+        for (String line : lines) {
+            if (line.matches("^\\d+\\.\\s+.*$")) {
+                // Remove the numbering and add to the list
+                tags.add(line.replaceAll("^\\d+\\.\\s+", ""));
+            }
+        }
+
+        return tags;
     }
 
     public static String getTextFromNode(String path, String language) {
@@ -117,6 +139,8 @@ public class RequestAwsBedrockServiceImpl implements RequestAwsBedrockService, M
             });
 
             for (Map.Entry<String, String> entry : contentToAnalyse.entrySet()) {
+                LOGGER.info(entry.getValue());
+
                 inputText += entry.getValue();
             }
 
@@ -155,6 +179,7 @@ public class RequestAwsBedrockServiceImpl implements RequestAwsBedrockService, M
             regionProps = (String) dictionary.get("aws.region");
             System.setProperty("aws.region", regionProps);
             maxTagsAdded = (String) dictionary.get("aws.maxTagsAdded");
+            promptProps = (String) dictionary.get("aws.prompt");
         }
         if (!(accessKey != null && !accessKey.trim().isEmpty()))
             LOGGER.error("awsBedrock accessKey not defined. Please add it to org.jahia.se.modules.awsBedrock.cfg");

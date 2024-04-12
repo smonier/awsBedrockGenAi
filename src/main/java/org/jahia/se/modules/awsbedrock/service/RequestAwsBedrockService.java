@@ -1,9 +1,9 @@
 package org.jahia.se.modules.awsbedrock.service;
 
-import org.json.JSONObject;
+import java.util.List;
 
 public interface RequestAwsBedrockService {
 
-    public JSONObject generateAutoTags(String path, String language) throws Exception;
+    public List<String> generateAutoTags(String path, String language) throws Exception;
 
 }

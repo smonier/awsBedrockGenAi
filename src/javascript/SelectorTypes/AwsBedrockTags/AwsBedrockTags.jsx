@@ -105,7 +105,8 @@ export const AwsBedrockTags = ({path, render: Render, ...props}) => {
                             try {
                                 setLoading(true);
                                 const myData = await resp.json();
-                                const list = myData.results;
+                                const list = myData.tags;
+                                console.log('return String:', list);
                                 if (list.length < 1) {
                                     setError(t('automatedTextTags.tagsField.empty'));
                                     return;
