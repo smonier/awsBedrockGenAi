@@ -1,8 +1,6 @@
 package org.jahia.se.modules.awsbedrock.service.impl;
 
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
 import org.jahia.api.Constants;
 import org.jahia.se.modules.awsbedrock.service.RequestAwsBedrockService;
 import org.jahia.se.modules.awsbedrock.util.BedrockRequestBody;
@@ -53,6 +51,7 @@ public class RequestAwsBedrockServiceImpl implements RequestAwsBedrockService, M
     public static String maxTagsAdded;
     public static String inputText;
     public static String promptProps;
+    public static String maxStringLengthProps;
 
     @Override
     public List<String> generateAutoTags(String path, String language) throws Exception {
@@ -64,7 +63,7 @@ public class RequestAwsBedrockServiceImpl implements RequestAwsBedrockService, M
         LOGGER.info("ModelId : " + bedrockModelId);
         //LOGGER.info(System.getProperty("aws.accessKeyId")+" / "+System.getProperty("aws.secretAccessKey"));
 
-        return invokeAwsBedrock(PROMPT, regionProps, bedrockModelId);
+        return invokeAwsBedrock(limitStringLength(PROMPT,Integer.parseInt(maxStringLengthProps)), regionProps, bedrockModelId);
     }
 
     /**
@@ -75,12 +74,11 @@ public class RequestAwsBedrockServiceImpl implements RequestAwsBedrockService, M
      * @throws Exception If there is an error during the invocation.
      */
     public static List<String> invokeAwsBedrock(String prompt, String region, String modelId) throws Exception {
-
+        List<String> bedrockResponse = null;
         try (
             BedrockRuntimeClient bedrockClient = BedrockRuntimeClient.builder()
                     .region(Region.of(region))
                     .credentialsProvider(SystemPropertyCredentialsProvider.create())
-                    //.credentialsProvider(ProfileCredentialsProvider.create())
                     .build()) {
 
             String bedrockBody = BedrockRequestBody.builder()
@@ -96,13 +94,39 @@ public class RequestAwsBedrockServiceImpl implements RequestAwsBedrockService, M
             InvokeModelResponse invokeModelResponse = bedrockClient.invokeModel(invokeModelRequest);
             JSONObject responseAsJson = new JSONObject(invokeModelResponse.body().asUtf8String());
 
-            // Assuming the response body has a "results" field that is an array of objects
-            // This part might need adjustments based on the actual response structure
-            LOGGER.info("Response: "+responseAsJson.getJSONArray("results").getJSONObject(0).toString());
-            return extractTags(responseAsJson.getJSONArray("results").getJSONObject(0).toString());
+            switch (modelId) {
+                case "amazon.titan-tg1-large":
+                case "amazon.titan-text-express-v1":
+                    // Assuming the response body has a "results" field that is an array of objects
+                    // This part might need adjustments based on the actual response structure
+                    LOGGER.info("Response: " + responseAsJson.getJSONArray("results").getJSONObject(0).toString());
+                    bedrockResponse =  extractTagsFromTitan(responseAsJson.getJSONArray("results").getJSONObject(0).toString());
+                break;
+                case "anthropic.claude-instant-v1":
+                case "anthropic.claude-v1":
+                case "anthropic.claude-v2":
+                    LOGGER.info("Response: " + responseAsJson.getString("completion"));
+                    bedrockResponse =  extractTagsFromClaude(responseAsJson.getString("completion"));
+
+            }
+            return bedrockResponse;
         }
     }
-    public static List<String> extractTags(String jsonString) throws JSONException {
+
+    public static String limitStringLength(String input, int maxLength) {
+        if (input == null) return null; // handle null input gracefully
+
+        int actualLength = input.length();
+        if (actualLength > maxLength) {
+            // Optionally log or handle the case where input exceeds maxLength
+            System.out.println("Malformed input request: expected maxLength: " + maxLength + ", actual: " + actualLength);
+            return input.substring(0, maxLength);
+        }
+
+        return input; // Return the original string if it's within the limit
+    }
+
+    public static List<String> extractTagsFromTitan(String jsonString) throws JSONException {
         JSONObject jsonObject = new JSONObject(jsonString);
         String outputText = jsonObject.getString("outputText");
 
@@ -120,7 +144,24 @@ public class RequestAwsBedrockServiceImpl implements RequestAwsBedrockService, M
 
         return tags;
     }
+    public static List<String> extractTagsFromClaude(String jsonString) throws JSONException {
+        /*JSONObject jsonObject = new JSONObject(jsonString);
+        String outputText = jsonObject.getString("text");*/
 
+        // Split the output text into lines and process each line
+        String[] lines = jsonString.split("\\n");
+        List<String> tags = new ArrayList<>();
+
+        // Iterate over each line, extracting the tag if it matches the expected format
+        for (String line : lines) {
+            if (line.matches("^\\d+\\.\\s+.*$")) {
+                // Remove the numbering and add to the list
+                tags.add(line.replaceAll("^\\d+\\.\\s+", ""));
+            }
+        }
+
+        return tags;
+    }
     public static String getTextFromNode(String path, String language) {
 
         try {
@@ -139,8 +180,6 @@ public class RequestAwsBedrockServiceImpl implements RequestAwsBedrockService, M
             });
 
             for (Map.Entry<String, String> entry : contentToAnalyse.entrySet()) {
-                LOGGER.info(entry.getValue());
-
                 inputText += entry.getValue();
             }
 
@@ -158,15 +197,6 @@ public class RequestAwsBedrockServiceImpl implements RequestAwsBedrockService, M
         return doc.text();
     }
 
-    public static AWSCredentials getAWSCredentials(String accessKey,String secretKey) {
-        AWSCredentials awsCredentials = null;
-        if (accessKey != null && !accessKey.isEmpty() && secretKey != null && !secretKey.isEmpty()) {
-            awsCredentials = new BasicAWSCredentials(accessKey.trim(), secretKey.trim());
-        }
-        return awsCredentials;
-
-    }
-
     @Override
     public void updated(Dictionary<String, ?> dictionary) throws ConfigurationException {
         if (dictionary != null) {
@@ -180,6 +210,8 @@ public class RequestAwsBedrockServiceImpl implements RequestAwsBedrockService, M
             System.setProperty("aws.region", regionProps);
             maxTagsAdded = (String) dictionary.get("aws.maxTagsAdded");
             promptProps = (String) dictionary.get("aws.prompt");
+            maxStringLengthProps = (String) dictionary.get("aws.maxStringLength");
+
         }
         if (!(accessKey != null && !accessKey.trim().isEmpty()))
             LOGGER.error("awsBedrock accessKey not defined. Please add it to org.jahia.se.modules.awsBedrock.cfg");

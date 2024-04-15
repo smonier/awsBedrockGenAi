@@ -67,6 +67,9 @@ public class BedrockRequestBody {
                 case "stability.stable-diffusion-xl-v0":
                     bedrockBodyCommand = new StabilityAICommand(prompt, inferenceParameters);
                     break;
+                case "mistral-large-latest":
+                    bedrockBodyCommand = new MistralAiCommand(prompt, inferenceParameters);
+                    break;
             }
             return bedrockBodyCommand.execute();
         }
@@ -243,6 +246,30 @@ class StabilityAICommand extends BedrockBodyCommand {
         jsonMap.put("cfg_scale", 10);
         jsonMap.put("seed", 0);
         jsonMap.put("steps", 50);
+
+        if (this.inferenceParameters != null && !this.inferenceParameters.isEmpty()) {
+            updateMap(jsonMap, inferenceParameters);
+        }
+        return new JSONObject(jsonMap).toString();
+    }
+}
+
+class MistralAiCommand extends BedrockBodyCommand {
+
+    public MistralAiCommand(String prompt, Map<String, Object> inferenceParameters) {
+        super(prompt, inferenceParameters);
+    }
+
+    @Override
+    public String execute() {
+
+        Map<String, Object> jsonMap = new HashMap<>(7);
+        jsonMap.put("prompt", "<s>[INST]"+this.prompt+"[/INST]");
+        jsonMap.put("max_tokens", 400);
+        jsonMap.put("temperature", 0.75);
+        jsonMap.put("top_p", 0.7);
+        jsonMap.put("top_k", 50);
+        jsonMap.put("stop", new String[] {});
 
         if (this.inferenceParameters != null && !this.inferenceParameters.isEmpty()) {
             updateMap(jsonMap, inferenceParameters);
