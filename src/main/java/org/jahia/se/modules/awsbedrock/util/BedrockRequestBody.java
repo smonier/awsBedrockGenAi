@@ -68,7 +68,7 @@ public class BedrockRequestBody {
                     bedrockBodyCommand = new StabilityAICommand(prompt, inferenceParameters);
                     break;
                 case "mistral-large-latest":
-                    bedrockBodyCommand = new MistralAiCommand(prompt, inferenceParameters);
+                    bedrockBodyCommand = new MistralAICommand(prompt, inferenceParameters);
                     break;
             }
             return bedrockBodyCommand.execute();
@@ -254,9 +254,9 @@ class StabilityAICommand extends BedrockBodyCommand {
     }
 }
 
-class MistralAiCommand extends BedrockBodyCommand {
+class MistralAICommand extends BedrockBodyCommand {
 
-    public MistralAiCommand(String prompt, Map<String, Object> inferenceParameters) {
+    public MistralAICommand(String prompt, Map<String, Object> inferenceParameters) {
         super(prompt, inferenceParameters);
     }
 
