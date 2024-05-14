@@ -3,8 +3,8 @@ package org.jahia.se.modules.awsbedrock.actions;
 import org.jahia.bin.Action;
 import org.jahia.bin.ActionResult;
 import org.jahia.se.modules.awsbedrock.service.RequestAwsBedrockService;
-import org.jahia.se.modules.awsbedrock.service.impl.RequestAwsBedrockServiceImpl;
 import org.jahia.services.content.JCRSessionWrapper;
+import org.jahia.services.content.decorator.JCRSiteNode;
 import org.jahia.services.render.RenderContext;
 import org.jahia.services.render.Resource;
 import org.jahia.services.render.URLResolver;
@@ -24,6 +24,8 @@ import java.util.Map;
 @Component(service = Action.class, immediate = true)
 public class RequestAwsBedrockAction extends Action {
     private static final Logger LOGGER = LoggerFactory.getLogger(RequestAwsBedrockAction.class);
+    private final static String AWS_BEDROCK_MIX="jmix:awsBedrock";
+    private static String PROMPT = null;
 
     @Activate
     public void activate() {
@@ -56,20 +58,30 @@ public class RequestAwsBedrockAction extends Action {
         int resultCode = HttpServletResponse.SC_BAD_REQUEST;
         final String currentLanguage = resource.getLocale().getLanguage();
         LOGGER.info("path: " + resource.getNode().getPath());
+        boolean hasAwsBedrockEnabled = renderContext.getSite().isNodeType(AWS_BEDROCK_MIX);
 
-        try {
-            // Simulate obtaining JSON object from some service
-            data = awsBedrockGeneratorService.generateAutoTags(resource.getNode().getPath(), currentLanguage);
-            JSONArray jsonArray = new JSONArray(data);
-            resp.put("tags", jsonArray);
-            resultCode = HttpServletResponse.SC_OK;
-            LOGGER.info("tags: " + jsonArray.toString());
+        if (hasAwsBedrockEnabled) {
+            JCRSiteNode site = renderContext.getSite();
+            PROMPT = site.getPropertyAsString("j:awsBedrockPrompt");
 
-            // Return the result encapsulated in an ActionResult
-            return new ActionResult(resultCode, null, resp);
+            try {
+                // Simulate obtaining JSON object from some service
+                data = awsBedrockGeneratorService.generateAutoTags(resource.getNode().getPath(), currentLanguage, PROMPT);
+                JSONArray jsonArray = new JSONArray(data);
+                resp.put("tags", jsonArray);
+                resultCode = HttpServletResponse.SC_OK;
+                LOGGER.info("tags: " + jsonArray.toString());
 
-        } catch (Exception e) {
-            LOGGER.error("Error processing the JSON data", e);
+                // Return the result encapsulated in an ActionResult
+                return new ActionResult(resultCode, null, resp);
+
+            } catch (Exception e) {
+                LOGGER.error("Error processing the JSON data", e);
+                // If there is any exception, log it and return a bad request result
+                return new ActionResult(HttpServletResponse.SC_BAD_REQUEST, null, null);
+            }
+        } else {
+            LOGGER.error("Module AWS Bedrock not activated");
             // If there is any exception, log it and return a bad request result
             return new ActionResult(HttpServletResponse.SC_BAD_REQUEST, null, null);
         }

@@ -54,10 +54,11 @@ public class RequestAwsBedrockServiceImpl implements RequestAwsBedrockService, M
     public static String maxStringLengthProps;
 
     @Override
-    public List<String> generateAutoTags(String path, String language) throws Exception {
+    public List<String> generateAutoTags(String path, String language, String prompt) throws Exception {
 
         String cleanText = getTextFromNode(path, language);
-        String PROMPT = promptProps + cleanText;
+//        String PROMPT = promptProps + cleanText;
+        String PROMPT = prompt;
         LOGGER.info("PROMPT : " + PROMPT);
         LOGGER.info("Region : " + regionProps);
         LOGGER.info("ModelId : " + bedrockModelId);

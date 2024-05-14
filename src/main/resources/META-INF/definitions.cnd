@@ -1,2 +1,7 @@
 <jnt = 'http://www.jahia.org/jahia/nt/1.0'>
 <jmix = 'http://www.jahia.org/jahia/mix/1.0'>
+<mix = 'http://www.jcp.org/jcr/mix/1.0'>
+<j = 'http://www.jahia.org/jahia/1.0'>
+
+[jmix:awsBedrock] mixin
+ - j:awsBedrockPrompt (string, textarea) = 'Generate 5 tags as one word (seperated by a dash if more than one word) returned as a numbered list from the following text:' autocreated

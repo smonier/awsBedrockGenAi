@@ -42,5 +42,12 @@
       "tag": "tag",
       "tags": "tags"
     }
+  },
+  "header": "Configure AWS Bedrock Generative AI for {{siteName}}",
+  "heading": "AWS Bedrock Prompt (Automated Tags Generation)",
+  "description": "AWS Bedrock Generative AI is a fully managed suite of services designed by Amazon Web Services to help developers and enterprises build, deploy, and scale generative AI applications efficiently.",
+  "save": "Save and Publish",
+  "notification": {
+    "save": "The prompt file has been saved and it is being published."
   }
 }

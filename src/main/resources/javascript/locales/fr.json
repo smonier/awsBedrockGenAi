@@ -40,5 +40,12 @@
       "tag": "tag",
       "tags": "tags"
     }
+  },
+  "header": "Configurer AWS Bedrock Generative AI pour {{siteName}}",
+  "heading": "Invite AWS Bedrock",
+  "description": "AWS Bedrock Generative AI est une suite de services entièrement gérée conçue par Amazon Web Services pour aider les développeurs et les entreprises à créer, déployer et mettre à l'échelle des applications d'IA générative de manière efficace.",
+  "save": "Enregistrer et publier",
+  "notification": {
+    "save": "Le fichier d'invite a été enregistré et est en cours de publication."
   }
 }
